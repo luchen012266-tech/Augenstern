@@ -11,25 +11,8 @@ import { shouldRequestPwaFullscreen } from "@/lib/pwa-display-mode";
  * 因此拿不到 main-app 里那段「点击进全屏」的监听，会一直露出浏览器地址栏。
  * 这个组件把同一套逻辑复刻到 world-builder 窗口，挂上即可。
  */
+
+
 export function AndroidFullscreen() {
-  useEffect(() => {
-    const isMobile = window.matchMedia(
-      "(max-width: 500px) and (hover: none) and (pointer: coarse)"
-    ).matches;
-    if (!isMobile) return;
-
-    function tryFullscreen() {
-      if (!shouldRequestPwaFullscreen()) return;
-      const doc = document.documentElement;
-      if (document.fullscreenElement) return;
-      doc.requestFullscreen?.().catch(() => { });
-    }
-    // 每次点击都尝试进入全屏（退出后可重新进入）
-    document.addEventListener("click", tryFullscreen);
-    return () => {
-      document.removeEventListener("click", tryFullscreen);
-    };
-  }, []);
-
   return null;
 }
