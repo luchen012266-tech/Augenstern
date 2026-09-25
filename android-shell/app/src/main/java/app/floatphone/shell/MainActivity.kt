@@ -26,6 +26,7 @@ import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.content.ContextCompat
 import androidx.core.view.WindowCompat
+import android.graphics.Rect
 import android.view.MotionEvent
 import android.view.ViewGroup
 import android.widget.FrameLayout
@@ -273,6 +274,19 @@ class MainActivity : AppCompatActivity() {
         private var startY = 0f
         private var trackingEdge = false
         private var intercepted = false
+
+        // 告诉系统：屏幕两侧这条边缘区域我们自己要用来做滑动返回，
+        // 系统的全面屏手势（返回/回桌面）不要在这块区域抢先接管。
+        override fun onLayout(changed: Boolean, l: Int, t: Int, r: Int, b: Int) {
+            super.onLayout(changed, l, t, r, b)
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q && width > 0 && height > 0) {
+                val edge = edgeWidthPx.toInt()
+                systemGestureExclusionRects = listOf(
+                    Rect(0, 0, edge, height),
+                    Rect(width - edge, 0, width, height),
+                )
+            }
+        }
 
         override fun onInterceptTouchEvent(ev: MotionEvent): Boolean {
             when (ev.actionMasked) {
