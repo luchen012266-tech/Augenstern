@@ -26,6 +26,10 @@ import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.content.ContextCompat
 import androidx.core.view.WindowCompat
+import android.view.MotionEvent
+import android.view.ViewGroup
+import android.widget.FrameLayout
+import kotlin.math.abs
 
 /**
  * Float 小手机安卓壳：全屏 WebView 直接加载线上站点。
@@ -91,7 +95,14 @@ class MainActivity : AppCompatActivity() {
         volumeControlStream = AudioManager.STREAM_MUSIC
 
         webView = WebView(this)
-        setContentView(webView)
+        val rootLayout = EdgeSwipeBackLayout(this) {
+            if (webView.canGoBack()) webView.goBack() else moveTaskToBack(true)
+        }
+        rootLayout.addView(
+            webView,
+            ViewGroup.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT),
+        )
+        setContentView(rootLayout)
 
         webView.settings.apply {
             javaScriptEnabled = true
@@ -242,6 +253,71 @@ class MainActivity : AppCompatActivity() {
                         .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK),
                 )
             }
+        }
+    }
+
+    /**
+     * 左右两侧边缘滑动返回：从屏幕左边缘或右边缘的一小条区域起手，
+     * 横向滑动超过阈值时触发返回（与返回键走同一套 canGoBack 逻辑）。
+     * 只在贴边起手时接管触摸事件，其余区域完全不影响 WebView 正常的
+     * 滚动、点击、长按等交互。
+     */
+    private class EdgeSwipeBackLayout(
+        context: Context,
+        private val onSwipeBack: () -> Unit,
+    ) : FrameLayout(context) {
+
+        private val edgeWidthPx = 24 * resources.displayMetrics.density // 边缘触发区宽度
+        private val swipeThresholdPx = 60 * resources.displayMetrics.density // 判定为"滑动返回"的最小横向位移
+        private var startX = 0f
+        private var startY = 0f
+        private var trackingEdge = false
+        private var intercepted = false
+
+        override fun onInterceptTouchEvent(ev: MotionEvent): Boolean {
+            when (ev.actionMasked) {
+                MotionEvent.ACTION_DOWN -> {
+                    startX = ev.x
+                    startY = ev.y
+                    trackingEdge = startX <= edgeWidthPx || startX >= width - edgeWidthPx
+                    intercepted = false
+                }
+                MotionEvent.ACTION_MOVE -> {
+                    if (trackingEdge && !intercepted) {
+                        val dx = ev.x - startX
+                        val dy = ev.y - startY
+                        // 横向位移明显大于纵向位移，且已有一定幅度，才判定为边缘滑动手势，
+                        // 此时才接管后续事件，避免误吞正常的纵向滚动
+                        if (abs(dx) > swipeThresholdPx / 2 && abs(dx) > abs(dy) * 1.5f) {
+                            intercepted = true
+                            return true
+                        }
+                    }
+                }
+                MotionEvent.ACTION_UP, MotionEvent.ACTION_CANCEL -> {
+                    trackingEdge = false
+                    intercepted = false
+                }
+            }
+            return false
+        }
+
+        override fun onTouchEvent(ev: MotionEvent): Boolean {
+            if (!intercepted) return false
+            when (ev.actionMasked) {
+                MotionEvent.ACTION_MOVE -> return true
+                MotionEvent.ACTION_UP, MotionEvent.ACTION_CANCEL -> {
+                    val dx = ev.x - startX
+                    val validSwipe =
+                        (startX <= edgeWidthPx && dx > swipeThresholdPx) ||
+                            (startX >= width - edgeWidthPx && dx < -swipeThresholdPx)
+                    intercepted = false
+                    trackingEdge = false
+                    if (validSwipe) onSwipeBack()
+                    return true
+                }
+            }
+            return true
         }
     }
 }
