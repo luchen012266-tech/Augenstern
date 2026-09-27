@@ -152,7 +152,10 @@ ${body}
   --ai-phone-app-safe-right: ${embedded ? "0px" : "16px"};
 }
 html, body { min-height: 100%; }
-* { -webkit-tap-highlight-color: transparent; box-sizing: border-box; font-family: system-ui, -apple-system, sans-serif !important; }
+* { -webkit-tap-highlight-color: transparent; box-sizing: border-box; }
+html *:not(#__never1):not(#__never2):not(#__never3):not(#__never4) {
+  font-family: system-ui, -apple-system, "PingFang SC", sans-serif !important;
+}
 </style>
 <script>
 (function(){
