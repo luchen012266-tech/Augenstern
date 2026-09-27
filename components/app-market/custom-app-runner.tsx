@@ -152,7 +152,7 @@ ${body}
   --ai-phone-app-safe-right: ${embedded ? "0px" : "16px"};
 }
 html, body { min-height: 100%; }
-* { -webkit-tap-highlight-color: transparent; box-sizing: border-box; }
+* { -webkit-tap-highlight-color: transparent; box-sizing: border-box; font-family: system-ui, -apple-system, sans-serif !important; }
 </style>
 <script>
 (function(){
